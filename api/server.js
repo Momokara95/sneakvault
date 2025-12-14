@@ -3,16 +3,16 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const Order = require('./models/Order');
-const paydunyaService = require('./services/paydunyaService');
-const emailService = require('./services/emailService');
-const smsService = require('./services/smsService');
+const Order = require('../models/Order');
+const paydunyaService = require('../services/paydunyaService');
+const emailService = require('../services/emailService');
+const smsService = require('../services/smsService');
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['https://votre-site.sn', 'http://localhost:3000'],
+  origin: ['https://sneakvault.netlify.app/', 'http://localhost:3000'], //mon url frontend netlify
   credentials: true
 }));
 app.use(bodyParser.json());

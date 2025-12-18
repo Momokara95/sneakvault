@@ -1,64 +1,64 @@
-const mongoose = require('mongoose');
+const express = require('express');
+const router = express.Router();
+const Order = require('./models/Order'); // Assure-toi que ce chemin est bon vers ton modèle
+// Tu peux ajouter tes services ici si nécessaire (ex: emailService)
 
-const orderSchema = new mongoose.Schema({
-  orderId: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  customer: {
-    name: { type: String, required: true },
-    phone: { type: String, required: true },
-    email: { type: String, required: true },
-    address: { type: String, required: true },
-    city: { type: String, required: true }
-  },
-  items: [{
-    name: String,
-    price: Number,
-    quantity: Number,
-    image: String
-  }],
-  totalAmount: {
-    type: Number,
-    required: true
-  },
-  paymentMethod: {
-    type: String,
-    enum: ['paydunya', 'delivery'],
-    required: true
-  },
-  paymentStatus: {
-    type: String,
-    enum: ['pending', 'paid', 'cash_on_delivery', 'failed'],
-    default: 'pending'
-  },
-  status: {
-    type: String,
-    enum: ['pending', 'awaiting_payment', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending'
-  },
-  notes: String,
-  paymentDetails: {
-    transactionId: String,
-    paymentMethod: String,
-    paidAt: Date
-  },
-  shipping: {
-    trackingNumber: String,
-    carrier: String,
-    shippedAt: Date,
-    deliveredAt: Date
+// ==========================================
+// 1. CRÉER UNE COMMANDE (POST /)
+// ==========================================
+router.post('/', async (req, res) => {
+  try {
+    console.log('📦 Nouvelle commande reçue:', req.body.orderId);
+
+    // Création de la commande avec les données reçues
+    const newOrder = new Order(req.body);
+    
+    // Sauvegarde dans la base de données
+    const savedOrder = await newOrder.save();
+
+    // Réponse succès
+    res.status(201).json({
+      success: true,
+      message: 'Commande créée avec succès',
+      order: savedOrder
+    });
+
+  } catch (error) {
+    console.error('❌ Erreur création commande:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la création de la commande',
+      error: error.message
+    });
   }
-}, {
-  timestamps: true
 });
 
-// Index pour recherches rapides
-orderSchema.index({ orderId: 1 });
-orderSchema.index({ 'customer.email': 1 });
-orderSchema.index({ 'customer.phone': 1 });
-orderSchema.index({ createdAt: -1 });
-orderSchema.index({ status: 1 });
+// ==========================================
+// 2. OBTENIR UNE COMMANDE (GET /:id)
+// ==========================================
+router.get('/:id', async (req, res) => {
+  try {
+    // Recherche par _id ou orderId
+    const order = await Order.findOne({ 
+      $or: [
+        { _id: req.params.id.match(/^[0-9a-fA-F]{24}$/) ? req.params.id : null },
+        { orderId: req.params.id }
+      ]
+    });
 
-module.exports = mongoose.model('Order', orderSchema);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Commande non trouvée' });
+    }
+
+    res.json({ success: true, order });
+
+  } catch (error) {
+    console.error('❌ Erreur récupération commande:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur', error: error.message });
+  }
+});
+
+// ==========================================
+// IMPORTANT : C'est cette ligne qui manquait !
+// ==========================================
+module.exports = router;
